@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initActiveNavigation();
     initTypingEffect();
     initHeroStatsCounter();
+    initImageErrorHandling();
+    initSkillFloatingAnimations();
 });
 
 // ===== SMOOTH SCROLLING =====
@@ -90,21 +92,43 @@ function initContactForm() {
     const form = document.querySelector('.contact-form');
     
     if (form) {
+        // Set the redirect URL to come back to the same page with success parameter
+        const successUrl = window.location.href.split('?')[0] + '?sent=true';
+        const nextInput = form.querySelector('#form-success-url');
+        if (nextInput) {
+            nextInput.value = successUrl;
+        }
+        
+        // Check if form was just submitted successfully
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('sent') === 'true') {
+            showNotification('Message sent successfully! I\'ll get back to you soon.', 'success');
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            form.reset();
+        }
+        
         form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
             // Get form data
             const formData = new FormData(form);
             const data = Object.fromEntries(formData);
             
-            // Simple validation
-            if (validateForm(data)) {
-                // Simulate form submission
-                showNotification('Message sent successfully!', 'success');
-                form.reset();
-            } else {
+            // Simple validation before submitting
+            if (!validateForm(data)) {
+                e.preventDefault();
                 showNotification('Please fill in all required fields.', 'error');
+                return;
             }
+            
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            
+            // Disable button and show loading state
+            submitButton.disabled = true;
+            submitButton.textContent = 'Sending...';
+            
+            // FormSubmit will handle the submission and redirect back to this page
+            // Allow the form to submit normally
         });
         
         // Add real-time validation
@@ -213,8 +237,10 @@ function initMobileMenu() {
     
     if (mobileToggle && navLinks) {
         mobileToggle.addEventListener('click', function() {
-            navLinks.classList.toggle('active');
+            const isActive = navLinks.classList.toggle('active');
             this.classList.toggle('active');
+            // Update aria-expanded for accessibility
+            this.setAttribute('aria-expanded', isActive ? 'true' : 'false');
         });
         
         // Close menu when clicking on a link
@@ -223,6 +249,7 @@ function initMobileMenu() {
             link.addEventListener('click', () => {
                 navLinks.classList.remove('active');
                 mobileToggle.classList.remove('active');
+                mobileToggle.setAttribute('aria-expanded', 'false');
             });
         });
     }
@@ -395,350 +422,6 @@ function initScrollToTop() {
 // Initialize scroll to top button
 initScrollToTop();
 
-// ===== APK DOWNLOAD TRACKING =====
-function initDownloadTracking() {
-    const downloadButtons = document.querySelectorAll('a[download]');
-    
-    downloadButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            const apkFile = this.getAttribute('href');
-            const appName = this.closest('.project-card')?.querySelector('.project-title')?.textContent || 'Unknown';
-            const appType = this.getAttribute('data-app');
-            
-            // Special handling for ADVENTURA app
-            if (appType === 'adventura') {
-                e.preventDefault();
-                showAdventuraWarning(appName, apkFile);
-                return;
-            }
-            
-            // Track download
-            trackDownload(appName, apkFile);
-        });
-    });
-}
-
-function trackDownload(appName, apkFile) {
-    // In a real application, you would send this data to your analytics service
-    console.log(`Download tracked: ${appName} - ${apkFile}`);
-    
-    // You could send this to Google Analytics, your own analytics service, etc.
-    // Example: gtag('event', 'download', { 'app_name': appName, 'file': apkFile });
-}
-
-//
-
-function showDownloadNotification(appName) {
-    const notification = document.createElement('div');
-    notification.className = 'download-notification';
-    notification.innerHTML = `
-        <div class="download-notification-content">
-            <div class="download-icon">📱</div>
-            <div class="download-text">
-                <h4>Download Started</h4>
-                <p>${appName} is being downloaded...</p>
-            </div>
-        </div>
-    `;
-    
-    // Add styles
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 0.75rem;
-        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
-        z-index: 10000;
-        transform: translateX(100%);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        max-width: 300px;
-        font-family: 'Inter', sans-serif;
-    `;
-    
-    // Style the content
-    const content = notification.querySelector('.download-notification-content');
-    content.style.cssText = `
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    `;
-    
-    const icon = notification.querySelector('.download-icon');
-    icon.style.cssText = `
-        font-size: 2rem;
-        flex-shrink: 0;
-    `;
-    
-    const text = notification.querySelector('.download-text');
-    text.style.cssText = `
-        flex: 1;
-    `;
-    
-    const heading = notification.querySelector('h4');
-    heading.style.cssText = `
-        margin: 0 0 0.25rem 0;
-        font-size: 1rem;
-        font-weight: 600;
-    `;
-    
-    const paragraph = notification.querySelector('p');
-    paragraph.style.cssText = `
-        margin: 0;
-        font-size: 0.875rem;
-        opacity: 0.9;
-    `;
-    
-    // Notification disabled per user request
-    return;
-    
-    // Animate in
-    setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-    }, 100);
-    
-    // Remove after 4 seconds
-    setTimeout(() => {
-        notification.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-            if (document.body.contains(notification)) {
-                document.body.removeChild(notification);
-            }
-        }, 300);
-    }, 4000);
-}
-
-function showAdventuraWarning(appName, apkFile) {
-    // Create modal overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        z-index: 10002;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    `;
-    
-    // Create modal content
-    const modal = document.createElement('div');
-    modal.className = 'adventura-warning-modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>📍 Campus-Specific App Notice</h3>
-                <button class="modal-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="warning-icon">⚠️</div>
-                <p><strong>Important:</strong> The ADVENTURA app is specifically designed for <strong>Don Honorio Ventura State University (DHVSU)</strong> campus navigation.</p>
-                <p>The AR features and navigation functionality will only work properly within the DHVSU campus area. Outside of this location, the app's core features may not function as intended.</p>
-                <div class="campus-info">
-                    <h4>📍 Campus Coverage:</h4>
-                    <ul>
-                        <li>DHVSU Main Campus</li>
-                        <li>All campus buildings and facilities</li>
-                        <li>Indoor and outdoor navigation</li>
-                        <li>3D building overlays</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary modal-cancel">Cancel</button>
-                <button class="btn btn-primary modal-confirm">Download Anyway</button>
-            </div>
-        </div>
-    `;
-    
-    // Style the modal
-    modal.style.cssText = `
-        background: white;
-        border-radius: 1rem;
-        max-width: 500px;
-        width: 90%;
-        max-height: 80vh;
-        overflow-y: auto;
-        transform: scale(0.8);
-        transition: transform 0.3s ease;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    `;
-    
-    // Style modal content
-    const content = modal.querySelector('.modal-content');
-    content.style.cssText = `
-        padding: 0;
-    `;
-    
-    // Style header
-    const header = modal.querySelector('.modal-header');
-    header.style.cssText = `
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1.5rem 1.5rem 1rem 1.5rem;
-        border-bottom: 1px solid #e5e7eb;
-    `;
-    
-    const headerTitle = modal.querySelector('.modal-header h3');
-    headerTitle.style.cssText = `
-        margin: 0;
-        color: var(--text-primary);
-        font-size: 1.25rem;
-        font-weight: 700;
-    `;
-    
-    const closeBtn = modal.querySelector('.modal-close');
-    closeBtn.style.cssText = `
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: var(--text-secondary);
-        padding: 0.25rem;
-        border-radius: 0.25rem;
-        transition: background-color 0.2s;
-    `;
-    
-    // Style body
-    const body = modal.querySelector('.modal-body');
-    body.style.cssText = `
-        padding: 1.5rem;
-    `;
-    
-    const warningIcon = modal.querySelector('.warning-icon');
-    warningIcon.style.cssText = `
-        font-size: 2rem;
-        text-align: center;
-        margin-bottom: 1rem;
-    `;
-    
-    const paragraphs = modal.querySelectorAll('.modal-body p');
-    paragraphs.forEach(p => {
-        p.style.cssText = `
-            margin-bottom: 1rem;
-            line-height: 1.6;
-            color: var(--text-primary);
-        `;
-    });
-    
-    const campusInfo = modal.querySelector('.campus-info');
-    campusInfo.style.cssText = `
-        background: var(--bg-secondary);
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin-top: 1rem;
-    `;
-    
-    const campusTitle = modal.querySelector('.campus-info h4');
-    campusTitle.style.cssText = `
-        margin: 0 0 0.5rem 0;
-        color: var(--text-primary);
-        font-size: 1rem;
-    `;
-    
-    const campusList = modal.querySelector('.campus-info ul');
-    campusList.style.cssText = `
-        margin: 0;
-        padding-left: 1.5rem;
-        color: var(--text-secondary);
-    `;
-    
-    // Style footer
-    const footer = modal.querySelector('.modal-footer');
-    footer.style.cssText = `
-        display: flex;
-        gap: 1rem;
-        padding: 1rem 1.5rem 1.5rem 1.5rem;
-        justify-content: flex-end;
-    `;
-    // Ensure Cancel button is visible on light background
-    const cancelBtn = modal.querySelector('.modal-cancel');
-    if (cancelBtn) {
-        cancelBtn.style.cssText = `
-            background: #ffffff;
-            color: var(--text-primary);
-            border: 1px solid #e5e7eb;
-            padding: 0.6rem 1rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s, box-shadow 0.2s;
-        `;
-        cancelBtn.addEventListener('mouseenter', () => {
-            cancelBtn.style.background = '#f3f4f6';
-            cancelBtn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
-        });
-        cancelBtn.addEventListener('mouseleave', () => {
-            cancelBtn.style.background = '#ffffff';
-            cancelBtn.style.boxShadow = 'none';
-        });
-    }
-    
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-    
-    // Animate in
-    setTimeout(() => {
-        overlay.style.opacity = '1';
-        modal.style.transform = 'scale(1)';
-    }, 10);
-    
-    // Close handlers
-    function closeModal() {
-        overlay.style.opacity = '0';
-        modal.style.transform = 'scale(0.8)';
-        setTimeout(() => {
-            if (document.body.contains(overlay)) {
-                document.body.removeChild(overlay);
-            }
-        }, 300);
-    }
-    
-    closeBtn.addEventListener('click', closeModal);
-    modal.querySelector('.modal-cancel').addEventListener('click', closeModal);
-    
-    modal.querySelector('.modal-confirm').addEventListener('click', () => {
-        closeModal();
-        // Proceed with download
-        trackDownload(appName, apkFile);
-        
-        // Create temporary link and trigger download
-        const tempLink = document.createElement('a');
-        tempLink.href = apkFile;
-        tempLink.download = '';
-        document.body.appendChild(tempLink);
-        tempLink.click();
-        document.body.removeChild(tempLink);
-    });
-    
-    // Close on overlay click
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            closeModal();
-        }
-    });
-    
-    // Close on ESC key
-    const escHandler = (e) => {
-        if (e.key === 'Escape') {
-            closeModal();
-            document.removeEventListener('keydown', escHandler);
-        }
-    };
-    document.addEventListener('keydown', escHandler);
-}
-
-// Initialize download tracking
-initDownloadTracking();
 
 // ===== APP PREVIEW FUNCTIONALITY =====
 function initAppPreview() {
@@ -861,7 +544,7 @@ function showKidsCancervivePreview() {
                         <div class="gallery-item phone-frame-item" data-step="1">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="KC APP/app image/splash screen.jpg" alt="KC App Splash Screen" loading="lazy">
+                                    <img src="../KC APP/app image/splash screen.jpg" alt="KC App Splash Screen" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Splash Screen</div>
@@ -869,7 +552,7 @@ function showKidsCancervivePreview() {
                         <div class="gallery-item phone-frame-item" data-step="1">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="KC APP/app image/app info.jpg" alt="KC App Info" loading="lazy">
+                                    <img src="../KC APP/app image/app info.jpg" alt="KC App Info" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">App Information</div>
@@ -877,7 +560,7 @@ function showKidsCancervivePreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="KC APP/app image/main dash board.jpg" alt="KC App Main Dashboard" loading="lazy">
+                                    <img src="../KC APP/app image/main dash board.jpg" alt="KC App Main Dashboard" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Main Dashboard</div>
@@ -885,7 +568,7 @@ function showKidsCancervivePreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="KC APP/app image/main dashboard 2.jpg" alt="KC App Main Dashboard 2" loading="lazy">
+                                    <img src="../KC APP/app image/main dashboard 2.jpg" alt="KC App Main Dashboard 2" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Dashboard Overview</div>
@@ -893,7 +576,7 @@ function showKidsCancervivePreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="KC APP/app image/hospital.jpg" alt="KC App Hospital" loading="lazy">
+                                    <img src="../KC APP/app image/hospital.jpg" alt="KC App Hospital" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Hospital Information</div>
@@ -901,7 +584,7 @@ function showKidsCancervivePreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="KC APP/app image/chemo info.jpg" alt="KC App Chemo Info" loading="lazy">
+                                    <img src="../KC APP/app image/chemo info.jpg" alt="KC App Chemo Info" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Chemotherapy Information</div>
@@ -909,7 +592,7 @@ function showKidsCancervivePreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="KC APP/app image/finance .jpg" alt="KC App Finance" loading="lazy">
+                                    <img src="../KC APP/app image/finance .jpg" alt="KC App Finance" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Financial Management</div>
@@ -917,7 +600,7 @@ function showKidsCancervivePreview() {
                         <div class="gallery-item phone-frame-item" data-step="4">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="KC APP/app image/donation.jpg" alt="KC App Donation" loading="lazy">
+                                    <img src="../KC APP/app image/donation.jpg" alt="KC App Donation" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Donation System</div>
@@ -925,7 +608,7 @@ function showKidsCancervivePreview() {
                         <div class="gallery-item phone-frame-item" data-step="4">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="KC APP/app image/lgu.jpg" alt="KC App LGU" loading="lazy">
+                                    <img src="../KC APP/app image/lgu.jpg" alt="KC App LGU" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">LGU Information</div>
@@ -933,18 +616,13 @@ function showKidsCancervivePreview() {
                         <div class="gallery-item phone-frame-item" data-step="4">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="KC APP/app image/faq.jpg" alt="KC App FAQ" loading="lazy">
+                                    <img src="../KC APP/app image/faq.jpg" alt="KC App FAQ" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Frequently Asked Questions</div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="preview-footer">
-                <button class="btn btn-primary" onclick="window.open('KC APP/Kids-CancerVive.apk', '_blank')">
-                    <span class="download-icon">📱</span> Download App
-                </button>
             </div>
         </div>
     `;
@@ -1202,6 +880,11 @@ function showKidsCancervivePreview() {
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
     
+    // Prevent body scroll when modal is open - use overflow hidden instead of fixed
+    // This preserves scroll position naturally
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    
     // Animate in
     setTimeout(() => {
         overlay.style.opacity = '1';
@@ -1213,6 +896,9 @@ function showKidsCancervivePreview() {
         overlay.style.opacity = '0';
         modal.style.transform = 'scale(0.8)';
         setTimeout(() => {
+            // Simply restore overflow - scroll position is naturally preserved
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
             if (document.body.contains(overlay)) {
                 document.body.removeChild(overlay);
                 document.head.removeChild(style);
@@ -1278,7 +964,7 @@ function showAdventuraPreview() {
         <div class="preview-modal-content">
             <div class="preview-header">
                 <h2>ADVENTURA App Preview</h2>
-                <div class="preview-header-logo"><img src="Adventura/images/Logo.1.png" alt="Adventura Logo"></div>
+                <div class="preview-header-logo"><img src="../Adventura/images/Logo.1.png" alt="Adventura Logo"></div>
                 <button class="preview-close">&times;</button>
             </div>
             <div class="preview-body">
@@ -1319,7 +1005,7 @@ function showAdventuraPreview() {
                         <div class="gallery-item phone-frame-item" data-step="1">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Adventura/images/starting.png" alt="Starting Screen" loading="lazy">
+                                    <img src="../Adventura/images/starting.png" alt="Starting Screen" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Starting Screen</div>
@@ -1327,7 +1013,7 @@ function showAdventuraPreview() {
                         <div class="gallery-item phone-frame-item" data-step="1">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Adventura/images/interactive campus map.png" alt="Interactive Campus Map" loading="lazy">
+                                    <img src="../Adventura/images/interactive campus map.png" alt="Interactive Campus Map" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Interactive Campus Map</div>
@@ -1335,7 +1021,7 @@ function showAdventuraPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Adventura/images/choosing of buildings.png" alt="Choosing of Buildings" loading="lazy">
+                                    <img src="../Adventura/images/choosing of buildings.png" alt="Choosing of Buildings" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Choosing Buildings</div>
@@ -1343,7 +1029,7 @@ function showAdventuraPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Adventura/images/searching of buildings.jpg" alt="Searching of Buildings" loading="lazy">
+                                    <img src="../Adventura/images/searching of buildings.jpg" alt="Searching of Buildings" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Searching Buildings</div>
@@ -1351,7 +1037,7 @@ function showAdventuraPreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Adventura/images/building navigation.jpg" alt="Building Navigation" loading="lazy">
+                                    <img src="../Adventura/images/building navigation.jpg" alt="Building Navigation" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Building Navigation</div>
@@ -1359,7 +1045,7 @@ function showAdventuraPreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Adventura/images/augmented reality.png" alt="Augmented Reality View" loading="lazy">
+                                    <img src="../Adventura/images/augmented reality.png" alt="Augmented Reality View" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Augmented Reality</div>
@@ -1367,7 +1053,7 @@ function showAdventuraPreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Adventura/images/destination marker.png" alt="Destination Marker" loading="lazy">
+                                    <img src="../Adventura/images/destination marker.png" alt="Destination Marker" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Destination Marker</div>
@@ -1375,7 +1061,7 @@ function showAdventuraPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Adventura/images/hamburger button.jpg" alt="Hamburger Button" loading="lazy">
+                                    <img src="../Adventura/images/hamburger button.jpg" alt="Hamburger Button" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Menu Button</div>
@@ -1383,18 +1069,13 @@ function showAdventuraPreview() {
                         <div class="gallery-item phone-frame-item" data-step="1">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Adventura/images/birds eye view.jpg" alt="Bird's Eye View" loading="lazy">
+                                    <img src="../Adventura/images/birds eye view.jpg" alt="Bird's Eye View" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Bird's Eye View</div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="preview-footer">
-                <button class="btn btn-primary preview-download-btn">
-                    <span class="download-icon">📱</span> Download App
-                </button>
             </div>
         </div>
     `;
@@ -1463,6 +1144,11 @@ function showAdventuraPreview() {
     document.head.appendChild(style);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+    
+    // Prevent body scroll when modal is open - use overflow hidden instead of fixed
+    // This preserves scroll position naturally
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
 
     setTimeout(() => {
         overlay.style.opacity = '1';
@@ -1479,23 +1165,14 @@ function showAdventuraPreview() {
             if (document.head.contains(style)) {
                 document.head.removeChild(style);
             }
+            // Restore body scroll - simply restore overflow
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
         }, 300);
     }
 
     modal.querySelector('.preview-close').addEventListener('click', closeModal);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
-
-    // Make Download App show the Adventura campus notice (and close this preview)
-    const previewDownloadBtn = modal.querySelector('.preview-download-btn');
-    if (previewDownloadBtn) {
-        previewDownloadBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const appName = 'ADVENTURA: AR Campus Tour Navigation';
-            const apkFile = 'downloads/adventura.apk';
-            closeModal();
-            showAdventuraWarning(appName, apkFile);
-        });
-    }
 
     // Wire up click-to-enlarge using existing image modal
     const galleryItems = modal.querySelectorAll('.gallery-item');
@@ -1536,7 +1213,7 @@ function showEidolonPreview() {
         <div class="preview-modal-content">
             <div class="preview-header">
                 <h2>Eidolon ID Wallet Preview</h2>
-                <div class="preview-header-logo"><img src="Eidolon/images/logo.png" alt="Eidolon Logo"></div>
+                <div class="preview-header-logo"><img src="../Eidolon/images/logo.png" alt="Eidolon Logo"></div>
                 <button class="preview-close">&times;</button>
             </div>
             <div class="preview-body">
@@ -1577,7 +1254,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="1">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/log in.png" alt="Log In" loading="lazy">
+                                    <img src="../Eidolon/images/log in.png" alt="Log In" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Log In</div>
@@ -1585,7 +1262,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="1">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/set up password.png" alt="Set Up Password" loading="lazy">
+                                    <img src="../Eidolon/images/set up password.png" alt="Set Up Password" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Set Up Password</div>
@@ -1593,7 +1270,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="1">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/setting new pin.png" alt="Setting New PIN" loading="lazy">
+                                    <img src="../Eidolon/images/setting new pin.png" alt="Setting New PIN" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Set New PIN</div>
@@ -1601,7 +1278,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="1">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/set up biometrics.png" alt="Set Up Biometrics" loading="lazy">
+                                    <img src="../Eidolon/images/set up biometrics.png" alt="Set Up Biometrics" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Set Up Biometrics</div>
@@ -1609,7 +1286,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/dashboard.png" alt="Dashboard" loading="lazy">
+                                    <img src="../Eidolon/images/dashboard.png" alt="Dashboard" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Dashboard</div>
@@ -1617,7 +1294,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/my ids.png" alt="My IDs" loading="lazy">
+                                    <img src="../Eidolon/images/my ids.png" alt="My IDs" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">My IDs</div>
@@ -1625,7 +1302,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/add id.png" alt="Add ID" loading="lazy">
+                                    <img src="../Eidolon/images/add id.png" alt="Add ID" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Add ID</div>
@@ -1633,7 +1310,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/import id.png" alt="Import ID" loading="lazy">
+                                    <img src="../Eidolon/images/import id.png" alt="Import ID" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Import ID</div>
@@ -1641,7 +1318,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/scan id option.png" alt="Scan ID Option" loading="lazy">
+                                    <img src="../Eidolon/images/scan id option.png" alt="Scan ID Option" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Scan ID Option</div>
@@ -1649,7 +1326,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/scan id.png" alt="Scan ID" loading="lazy">
+                                    <img src="../Eidolon/images/scan id.png" alt="Scan ID" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Scan ID</div>
@@ -1657,7 +1334,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/id details.png" alt="ID Details" loading="lazy">
+                                    <img src="../Eidolon/images/id details.png" alt="ID Details" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">ID Details</div>
@@ -1665,7 +1342,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/hide details.png" alt="Hide Details" loading="lazy">
+                                    <img src="../Eidolon/images/hide details.png" alt="Hide Details" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Hide Details</div>
@@ -1673,7 +1350,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/archiving id.png" alt="Archiving ID" loading="lazy">
+                                    <img src="../Eidolon/images/archiving id.png" alt="Archiving ID" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Archiving ID</div>
@@ -1681,7 +1358,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/archives.png" alt="Archives" loading="lazy">
+                                    <img src="../Eidolon/images/archives.png" alt="Archives" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Archives</div>
@@ -1689,7 +1366,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="2">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/favorites.png" alt="Favorites" loading="lazy">
+                                    <img src="../Eidolon/images/favorites.png" alt="Favorites" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Favorites</div>
@@ -1697,7 +1374,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/share id.png" alt="Share ID" loading="lazy">
+                                    <img src="../Eidolon/images/share id.png" alt="Share ID" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Share ID</div>
@@ -1705,7 +1382,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/how to save image.png" alt="How to Save Image" loading="lazy">
+                                    <img src="../Eidolon/images/how to save image.png" alt="How to Save Image" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Save Image Guide</div>
@@ -1713,7 +1390,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/saving notification.png" alt="Saving Notification" loading="lazy">
+                                    <img src="../Eidolon/images/saving notification.png" alt="Saving Notification" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Saving Notification</div>
@@ -1721,7 +1398,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/settings.png" alt="Settings" loading="lazy">
+                                    <img src="../Eidolon/images/settings.png" alt="Settings" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Settings</div>
@@ -1729,7 +1406,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/change mpin.png" alt="Change MPIN" loading="lazy">
+                                    <img src="../Eidolon/images/change mpin.png" alt="Change MPIN" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Change MPIN</div>
@@ -1737,7 +1414,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/terms and condition.png" alt="Terms and Conditions" loading="lazy">
+                                    <img src="../Eidolon/images/terms and condition.png" alt="Terms and Conditions" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Terms & Conditions</div>
@@ -1745,7 +1422,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/faq.png" alt="FAQ" loading="lazy">
+                                    <img src="../Eidolon/images/faq.png" alt="FAQ" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">FAQ</div>
@@ -1753,7 +1430,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/hamburger button.png" alt="Hamburger Button" loading="lazy">
+                                    <img src="../Eidolon/images/hamburger button.png" alt="Hamburger Button" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Menu Button</div>
@@ -1761,7 +1438,7 @@ function showEidolonPreview() {
                         <div class="gallery-item phone-frame-item" data-step="3">
                             <div class="phone-mockup-frame">
                                 <div class="phone-mockup-screen">
-                                    <img src="Eidolon/images/recover or delete.png" alt="Recover or Delete" loading="lazy">
+                                    <img src="../Eidolon/images/recover or delete.png" alt="Recover or Delete" loading="lazy">
                                 </div>
                             </div>
                             <div class="gallery-caption">Recover or Delete</div>
@@ -1830,6 +1507,11 @@ function showEidolonPreview() {
     document.head.appendChild(style);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+    
+    // Prevent body scroll when modal is open - use overflow hidden instead of fixed
+    // This preserves scroll position naturally
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
 
     setTimeout(() => {
         overlay.style.opacity = '1';
@@ -1846,6 +1528,9 @@ function showEidolonPreview() {
             if (document.head.contains(style)) {
                 document.head.removeChild(style);
             }
+            // Restore body scroll - simply restore overflow
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
         }, 300);
     }
 
@@ -1932,19 +1617,6 @@ function showWeatherCastPreview() {
                         </div>
                     </div>
                 </div>
-                <div class="screenshot-gallery">
-                    <h3>Project Screenshots</h3>
-                    <div class="gallery-grid">
-                        <div class="gallery-item desktop-frame-item">
-                            <div class="desktop-mockup-frame">
-                                <div class="desktop-mockup-screen">
-                                    <img src="weather cast pro/images/bg.png" alt="WeatherCast Pro" loading="lazy">
-                                </div>
-                            </div>
-                            <div class="gallery-caption">WeatherCast Pro Dashboard</div>
-                        </div>
-                    </div>
-                </div>
             </div>
             <div class="preview-footer">
                 <a href="https://dreidvd.github.io/Weather-Cast-Pro/" class="btn btn-primary" target="_blank">
@@ -1973,24 +1645,11 @@ function showWeatherCastPreview() {
         .step-number { background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%); color:white; width:2.5rem; height:2.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.125rem; flex-shrink:0; }
         .step-content h4 { margin:0 0 0.5rem 0; color: #F3F4F6; font-size:1rem; font-weight:600; }
         .step-content p { margin:0; color: #94A3B8; font-size:0.875rem; line-height:1.5; }
-        .screenshot-gallery { margin-bottom: 3rem; }
-        .screenshot-gallery h3 { color: #F3F4F6; font-size:1.25rem; font-weight:600; margin-bottom:1.5rem; text-align:center; }
-        .gallery-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:2rem; justify-items: center; }
-        .gallery-item { position:relative; border-radius:1rem; overflow:visible; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor:pointer; background: transparent; }
-        .gallery-item:hover { transform: translateY(-8px) scale(1.02); }
-        .gallery-item img { width:100%; height:auto; object-fit:cover; display:block; border-radius:0.5rem; }
-        .gallery-caption { margin-top:1rem; color:#C4B5FD; font-weight:500; font-size:0.875rem; text-align:center; }
-        .desktop-frame-item { padding: 1rem; display: flex; flex-direction: column; align-items: center; }
-        .desktop-mockup-frame { background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%); border-radius: 12px 12px 0 0; padding: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.1); position: relative; max-width: 600px; width: 100%; }
-        .desktop-mockup-frame::before { content: ''; position: absolute; top: 8px; left: 16px; width: 10px; height: 10px; background: #ff5f57; border-radius: 50%; box-shadow: 16px 0 0 #ffbd2e, 32px 0 0 #28ca42; }
-        .desktop-mockup-screen { background: #000; border-radius: 6px; overflow: hidden; }
-        .desktop-mockup-screen img { width: 100%; height: auto; display: block; }
         .preview-footer { padding: 2rem; border-top: 1px solid rgba(167, 139, 250, 0.2); display: flex; justify-content: center; background: #1E1B2E; border-radius: 0 0 1rem 1rem; }
         .preview-footer .btn { text-decoration: none; }
         @media (max-width: 768px) {
             .workflow-steps { grid-template-columns: 1fr; }
             .preview-header, .preview-body, .preview-footer { padding: 1rem; }
-            .gallery-grid { grid-template-columns: 1fr; gap: 1.5rem; }
         }
     `;
 
@@ -2010,6 +1669,11 @@ function showWeatherCastPreview() {
     document.head.appendChild(style);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+    
+    // Prevent body scroll when modal is open - use overflow hidden instead of fixed
+    // This preserves scroll position naturally
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
 
     setTimeout(() => {
         overlay.style.opacity = '1';
@@ -2026,6 +1690,9 @@ function showWeatherCastPreview() {
             if (document.head.contains(style)) {
                 document.head.removeChild(style);
             }
+            // Restore body scroll - simply restore overflow
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
         }, 300);
     }
 
@@ -2099,19 +1766,6 @@ function showDiscoverPHPreview() {
                         </div>
                     </div>
                 </div>
-                <div class="screenshot-gallery">
-                    <h3>Project Screenshots</h3>
-                    <div class="gallery-grid">
-                        <div class="gallery-item">
-                            <img src="../Philippines/main.png" alt="Discover PH Main" loading="lazy">
-                            <div class="gallery-caption">Main Page</div>
-                        </div>
-                        <div class="gallery-item">
-                            <img src="../Philippines/about.png" alt="Discover PH About" loading="lazy">
-                            <div class="gallery-caption">About Section</div>
-                        </div>
-                    </div>
-                </div>
             </div>
             <div class="preview-footer">
                 <a href="https://dreidvd.github.io/Discover-PH/html/index.html" class="btn btn-primary" target="_blank">
@@ -2123,45 +1777,33 @@ function showDiscoverPHPreview() {
 
     const style = document.createElement('style');
     style.textContent = `
-        .preview-modal-content { padding: 0; }
-        .preview-header { position:relative; display:flex; justify-content:space-between; align-items:center; padding: 2rem 2rem 1rem 2rem; border-bottom:1px solid #e5e7eb; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 1rem 1rem 0 0; overflow:hidden; }
-        .preview-header h2 { margin:0; color: var(--text-primary); font-size:1.5rem; font-weight:700; }
-        .preview-close { background:none; border:none; font-size:2rem; cursor:pointer; color: var(--text-secondary); padding:0.5rem; border-radius:0.5rem; transition:all 0.2s; }
-        .preview-close:hover { background: rgba(0,0,0,0.1); color: var(--text-primary); }
-        .preview-body { padding: 2rem; }
+        .preview-modal-content { padding: 0; background: #1E1B2E; }
+        .preview-header { position:relative; display:flex; justify-content:space-between; align-items:center; padding: 2rem 2rem 1rem 2rem; border-bottom:1px solid rgba(167, 139, 250, 0.2); background: linear-gradient(135deg, #1E1B2E 0%, #252238 100%); border-radius: 1rem 1rem 0 0; overflow:hidden; }
+        .preview-header h2 { margin:0; color: #F3F4F6; font-size:1.5rem; font-weight:700; }
+        .preview-close { background:none; border:none; font-size:2rem; cursor:pointer; color: #94A3B8; padding:0.5rem; border-radius:0.5rem; transition:all 0.2s; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        .preview-close:hover { background: rgba(167, 139, 250, 0.2); color: #A78BFA; }
+        .preview-body { padding: 2rem; background: #1E1B2E; }
         .app-details { margin-bottom: 3rem; }
-        .app-details h3 { color: var(--text-primary); font-size:1.25rem; font-weight:600; margin-bottom:1rem; }
-        .app-details p { color: var(--text-secondary); line-height:1.8; }
+        .app-details h3 { color: #F3F4F6; font-size:1.25rem; font-weight:600; margin-bottom:1rem; text-align: center; }
+        .app-details p { color: #E2E8F0; line-height:1.8; }
         .app-workflow { margin-bottom: 3rem; }
-        .app-workflow h3 { color: var(--text-primary); font-size:1.25rem; font-weight:600; margin-bottom:1.5rem; text-align:center; }
+        .app-workflow h3 { color: #F3F4F6; font-size:1.25rem; font-weight:600; margin-bottom:1.5rem; text-align:center; }
         .workflow-steps { display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.5rem; margin-bottom:2rem; }
-        .workflow-step { display:flex; align-items:flex-start; gap:1rem; padding:1.5rem; background: var(--bg-secondary); border-radius:0.75rem; border-left:4px solid var(--primary-color); }
-        .step-number { background: var(--gradient-primary); color:white; width:2.5rem; height:2.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.125rem; flex-shrink:0; }
-        .step-content h4 { margin:0 0 0.5rem 0; color: var(--text-primary); font-size:1rem; font-weight:600; }
-        .step-content p { margin:0; color: var(--text-secondary); font-size:0.875rem; line-height:1.5; }
-        .screenshot-gallery h3 { color: var(--text-primary); font-size:1.25rem; font-weight:600; margin-bottom:1.5rem; text-align:center; }
-        .gallery-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:2rem; justify-items: center; }
-        .gallery-item { position:relative; border-radius:1rem; overflow:visible; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor:pointer; background: transparent; }
-        .gallery-item:hover { transform: translateY(-8px) scale(1.02); }
-        .gallery-item img { width:100%; height:auto; object-fit:cover; display:block; border-radius:0.5rem; }
-        .gallery-caption { margin-top:1rem; color:#C4B5FD; font-weight:500; font-size:0.875rem; text-align:center; }
-        .desktop-frame-item { padding: 1rem; display: flex; flex-direction: column; align-items: center; }
-        .desktop-mockup-frame { background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%); border-radius: 12px 12px 0 0; padding: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.1); position: relative; max-width: 600px; width: 100%; }
-        .desktop-mockup-frame::before { content: ''; position: absolute; top: 8px; left: 16px; width: 10px; height: 10px; background: #ff5f57; border-radius: 50%; box-shadow: 16px 0 0 #ffbd2e, 32px 0 0 #28ca42; }
-        .desktop-mockup-screen { background: #000; border-radius: 6px; overflow: hidden; }
-        .desktop-mockup-screen img { width: 100%; height: auto; display: block; }
-        .preview-footer { padding: 2rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: center; }
+        .workflow-step { display:flex; align-items:flex-start; gap:1rem; padding:1.5rem; background: #252238; border-radius:0.75rem; border-left:4px solid #A78BFA; transition: transform 0.3s ease; }
+        .workflow-step:hover { transform: translateX(5px); }
+        .step-number { background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%); color:white; width:2.5rem; height:2.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.125rem; flex-shrink:0; }
+        .step-content h4 { margin:0 0 0.5rem 0; color: #F3F4F6; font-size:1rem; font-weight:600; }
+        .step-content p { margin:0; color: #94A3B8; font-size:0.875rem; line-height:1.5; }
+        .preview-footer { padding: 2rem; border-top: 1px solid rgba(167, 139, 250, 0.2); display: flex; justify-content: center; background: #1E1B2E; border-radius: 0 0 1rem 1rem; }
         .preview-footer .btn { text-decoration: none; }
         @media (max-width: 768px) {
             .workflow-steps { grid-template-columns: 1fr; }
-            .gallery-grid { grid-template-columns: 1fr; }
-            .gallery-item img { height:300px; }
-            .preview-header, .preview-body { padding: 1rem; }
+            .preview-header, .preview-body, .preview-footer { padding: 1rem; }
         }
     `;
 
     modal.style.cssText = `
-        background: white;
+        background: #1E1B2E;
         border-radius: 1rem;
         max-width: 1200px;
         width: 100%;
@@ -2169,12 +1811,18 @@ function showDiscoverPHPreview() {
         overflow-y: auto;
         transform: scale(0.8);
         transition: transform 0.3s ease;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(167, 139, 250, 0.2);
     `;
 
     document.head.appendChild(style);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+    
+    // Prevent body scroll when modal is open - use overflow hidden instead of fixed
+    // This preserves scroll position naturally
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
 
     setTimeout(() => {
         overlay.style.opacity = '1';
@@ -2191,23 +1839,14 @@ function showDiscoverPHPreview() {
             if (document.head.contains(style)) {
                 document.head.removeChild(style);
             }
+            // Restore body scroll - simply restore overflow
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
         }, 300);
     }
 
     modal.querySelector('.preview-close').addEventListener('click', closeModal);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
-
-    // Click-to-enlarge images
-    const galleryItems = modal.querySelectorAll('.gallery-item');
-    const allImages = Array.from(galleryItems).map(item => ({
-        src: item.querySelector('img').src,
-        caption: item.querySelector('.gallery-caption').textContent
-    }));
-    galleryItems.forEach((item, index) => {
-        item.addEventListener('click', () => {
-            showImageModal(allImages, index);
-        });
-    });
 }
 
 function showLolotoPreview() {
@@ -2277,42 +1916,38 @@ function showLolotoPreview() {
                     </div>
                 </div>
             </div>
-            <div class="preview-footer">
-                <button class="btn btn-primary preview-download-btn" onclick="window.open('downloads/loloto.apk', '_blank')">
-                    <span class="download-icon">📱</span> Download App
-                </button>
-            </div>
         </div>
     `;
 
     const style = document.createElement('style');
     style.textContent = `
-        .preview-modal-content { padding: 0; }
-        .preview-header { position:relative; display:flex; justify-content:space-between; align-items:center; padding: 2rem 2rem 1rem 2rem; border-bottom:1px solid #e5e7eb; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 1rem 1rem 0 0; overflow:hidden; }
-        .preview-header h2 { margin:0; color: var(--text-primary); font-size:1.5rem; font-weight:700; }
-        .preview-close { background:none; border:none; font-size:2rem; cursor:pointer; color: var(--text-secondary); padding:0.5rem; border-radius:0.5rem; transition:all 0.2s; }
-        .preview-close:hover { background: rgba(0,0,0,0.1); color: var(--text-primary); }
-        .preview-body { padding: 2rem; }
+        .preview-modal-content { padding: 0; background: #1E1B2E; }
+        .preview-header { position:relative; display:flex; justify-content:space-between; align-items:center; padding: 2rem 2rem 1rem 2rem; border-bottom:1px solid rgba(167, 139, 250, 0.2); background: linear-gradient(135deg, #1E1B2E 0%, #252238 100%); border-radius: 1rem 1rem 0 0; overflow:hidden; }
+        .preview-header h2 { margin:0; color: #F3F4F6; font-size:1.5rem; font-weight:700; }
+        .preview-close { background:none; border:none; font-size:2rem; cursor:pointer; color: #94A3B8; padding:0.5rem; border-radius:0.5rem; transition:all 0.2s; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        .preview-close:hover { background: rgba(167, 139, 250, 0.2); color: #A78BFA; }
+        .preview-body { padding: 2rem; background: #1E1B2E; }
         .app-details { margin-bottom: 3rem; }
-        .app-details h3 { color: var(--text-primary); font-size:1.25rem; font-weight:600; margin-bottom:1rem; }
-        .app-details p { color: var(--text-secondary); line-height:1.8; }
+        .app-details h3 { color: #F3F4F6; font-size:1.25rem; font-weight:600; margin-bottom:1rem; text-align: center; }
+        .app-details p { color: #E2E8F0; line-height:1.8; }
         .app-workflow { margin-bottom: 3rem; }
-        .app-workflow h3 { color: var(--text-primary); font-size:1.25rem; font-weight:600; margin-bottom:1.5rem; text-align:center; }
+        .app-workflow h3 { color: #F3F4F6; font-size:1.25rem; font-weight:600; margin-bottom:1.5rem; text-align:center; }
         .workflow-steps { display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.5rem; margin-bottom:2rem; }
-        .workflow-step { display:flex; align-items:flex-start; gap:1rem; padding:1.5rem; background: var(--bg-secondary); border-radius:0.75rem; border-left:4px solid var(--primary-color); }
-        .step-number { background: var(--gradient-primary); color:white; width:2.5rem; height:2.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.125rem; flex-shrink:0; }
-        .step-content h4 { margin:0 0 0.5rem 0; color: var(--text-primary); font-size:1rem; font-weight:600; }
-        .step-content p { margin:0; color: var(--text-secondary); font-size:0.875rem; line-height:1.5; }
-        .preview-footer { padding: 2rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: center; }
+        .workflow-step { display:flex; align-items:flex-start; gap:1rem; padding:1.5rem; background: #252238; border-radius:0.75rem; border-left:4px solid #A78BFA; transition: transform 0.3s ease; }
+        .workflow-step:hover { transform: translateX(5px); }
+        .step-number { background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%); color:white; width:2.5rem; height:2.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.125rem; flex-shrink:0; }
+        .step-content h4 { margin:0 0 0.5rem 0; color: #F3F4F6; font-size:1rem; font-weight:600; }
+        .step-content p { margin:0; color: #94A3B8; font-size:0.875rem; line-height:1.5; }
+        .preview-footer { padding: 2rem; border-top: 1px solid rgba(167, 139, 250, 0.2); display: flex; justify-content: center; background: #1E1B2E; border-radius: 0 0 1rem 1rem; }
         .preview-footer .btn { text-decoration: none; }
         @media (max-width: 768px) {
             .workflow-steps { grid-template-columns: 1fr; }
-            .preview-header, .preview-body { padding: 1rem; }
+            .preview-header, .preview-body, .preview-footer { padding: 1rem; }
         }
     `;
 
     modal.style.cssText = `
-        background: white;
+        background: #1E1B2E;
         border-radius: 1rem;
         max-width: 1200px;
         width: 100%;
@@ -2320,12 +1955,18 @@ function showLolotoPreview() {
         overflow-y: auto;
         transform: scale(0.8);
         transition: transform 0.3s ease;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(167, 139, 250, 0.2);
     `;
 
     document.head.appendChild(style);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+    
+    // Prevent body scroll when modal is open - use overflow hidden instead of fixed
+    // This preserves scroll position naturally
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
 
     setTimeout(() => {
         overlay.style.opacity = '1';
@@ -2342,6 +1983,9 @@ function showLolotoPreview() {
             if (document.head.contains(style)) {
                 document.head.removeChild(style);
             }
+            // Restore body scroll - simply restore overflow
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
         }, 300);
     }
 
@@ -2417,38 +2061,42 @@ function showPorschePreview() {
                 </div>
             </div>
             <div class="preview-footer">
-                <p style="text-align: center; color: var(--text-secondary); padding: 1rem;">Website coming soon</p>
+                <a href="https://dreidvd.github.io/porsche/" class="btn btn-primary" target="_blank">
+                    <span class="download-icon">🌐</span> Visit Website
+                </a>
             </div>
         </div>
     `;
 
     const style = document.createElement('style');
     style.textContent = `
-        .preview-modal-content { padding: 0; }
-        .preview-header { position:relative; display:flex; justify-content:space-between; align-items:center; padding: 2rem 2rem 1rem 2rem; border-bottom:1px solid #e5e7eb; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 1rem 1rem 0 0; overflow:hidden; }
-        .preview-header h2 { margin:0; color: var(--text-primary); font-size:1.5rem; font-weight:700; }
-        .preview-close { background:none; border:none; font-size:2rem; cursor:pointer; color: var(--text-secondary); padding:0.5rem; border-radius:0.5rem; transition:all 0.2s; }
-        .preview-close:hover { background: rgba(0,0,0,0.1); color: var(--text-primary); }
-        .preview-body { padding: 2rem; }
+        .preview-modal-content { padding: 0; background: #1E1B2E; }
+        .preview-header { position:relative; display:flex; justify-content:space-between; align-items:center; padding: 2rem 2rem 1rem 2rem; border-bottom:1px solid rgba(167, 139, 250, 0.2); background: linear-gradient(135deg, #1E1B2E 0%, #252238 100%); border-radius: 1rem 1rem 0 0; overflow:hidden; }
+        .preview-header h2 { margin:0; color: #F3F4F6; font-size:1.5rem; font-weight:700; }
+        .preview-close { background:none; border:none; font-size:2rem; cursor:pointer; color: #94A3B8; padding:0.5rem; border-radius:0.5rem; transition:all 0.2s; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        .preview-close:hover { background: rgba(167, 139, 250, 0.2); color: #A78BFA; }
+        .preview-body { padding: 2rem; background: #1E1B2E; }
         .app-details { margin-bottom: 3rem; }
-        .app-details h3 { color: var(--text-primary); font-size:1.25rem; font-weight:600; margin-bottom:1rem; }
-        .app-details p { color: var(--text-secondary); line-height:1.8; }
+        .app-details h3 { color: #F3F4F6; font-size:1.25rem; font-weight:600; margin-bottom:1rem; text-align: center; }
+        .app-details p { color: #E2E8F0; line-height:1.8; }
         .app-workflow { margin-bottom: 3rem; }
-        .app-workflow h3 { color: var(--text-primary); font-size:1.25rem; font-weight:600; margin-bottom:1.5rem; text-align:center; }
+        .app-workflow h3 { color: #F3F4F6; font-size:1.25rem; font-weight:600; margin-bottom:1.5rem; text-align:center; }
         .workflow-steps { display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.5rem; margin-bottom:2rem; }
-        .workflow-step { display:flex; align-items:flex-start; gap:1rem; padding:1.5rem; background: var(--bg-secondary); border-radius:0.75rem; border-left:4px solid var(--primary-color); }
-        .step-number { background: var(--gradient-primary); color:white; width:2.5rem; height:2.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.125rem; flex-shrink:0; }
-        .step-content h4 { margin:0 0 0.5rem 0; color: var(--text-primary); font-size:1rem; font-weight:600; }
-        .step-content p { margin:0; color: var(--text-secondary); font-size:0.875rem; line-height:1.5; }
-        .preview-footer { padding: 2rem; border-top: 1px solid #e5e7eb; }
+        .workflow-step { display:flex; align-items:flex-start; gap:1rem; padding:1.5rem; background: #252238; border-radius:0.75rem; border-left:4px solid #A78BFA; transition: transform 0.3s ease; }
+        .workflow-step:hover { transform: translateX(5px); }
+        .step-number { background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%); color:white; width:2.5rem; height:2.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.125rem; flex-shrink:0; }
+        .step-content h4 { margin:0 0 0.5rem 0; color: #F3F4F6; font-size:1rem; font-weight:600; }
+        .step-content p { margin:0; color: #94A3B8; font-size:0.875rem; line-height:1.5; }
+        .preview-footer { padding: 2rem; border-top: 1px solid rgba(167, 139, 250, 0.2); text-align: center; background: #1E1B2E; border-radius: 0 0 1rem 1rem; }
+        .preview-footer p { color: #94A3B8; }
         @media (max-width: 768px) {
             .workflow-steps { grid-template-columns: 1fr; }
-            .preview-header, .preview-body { padding: 1rem; }
+            .preview-header, .preview-body, .preview-footer { padding: 1rem; }
         }
     `;
 
     modal.style.cssText = `
-        background: white;
+        background: #1E1B2E;
         border-radius: 1rem;
         max-width: 1200px;
         width: 100%;
@@ -2456,12 +2104,18 @@ function showPorschePreview() {
         overflow-y: auto;
         transform: scale(0.8);
         transition: transform 0.3s ease;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(167, 139, 250, 0.2);
     `;
 
     document.head.appendChild(style);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+    
+    // Prevent body scroll when modal is open - use overflow hidden instead of fixed
+    // This preserves scroll position naturally
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
 
     setTimeout(() => {
         overlay.style.opacity = '1';
@@ -2478,6 +2132,9 @@ function showPorschePreview() {
             if (document.head.contains(style)) {
                 document.head.removeChild(style);
             }
+            // Restore body scroll - simply restore overflow
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
         }, 300);
     }
 
@@ -2669,6 +2326,9 @@ function showImageModal(images, currentIndex) {
     function closeModal() {
         overlay.style.opacity = '0';
         setTimeout(() => {
+            // Simply restore overflow - scroll position is naturally preserved
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
             if (document.body.contains(overlay)) {
                 document.body.removeChild(overlay);
             }
@@ -2766,6 +2426,11 @@ function showImageModal(images, currentIndex) {
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
     
+    // Prevent body scroll when modal is open - use overflow hidden instead of fixed
+    // This preserves scroll position naturally
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    
     // Initialize
     updateImage();
     
@@ -2780,6 +2445,9 @@ function showImageModal(images, currentIndex) {
         if (document.head.contains(responsiveStyle)) {
             document.head.removeChild(responsiveStyle);
         }
+        // Simply restore overflow - scroll position is naturally preserved
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
         originalCloseModal();
     };
 }
@@ -2808,7 +2476,11 @@ window.addEventListener('scroll', throttle(() => {
 
 // ===== ERROR HANDLING =====
 window.addEventListener('error', function(e) {
-    console.error('Portfolio Error:', e.error);
+    // Only log errors in development (when not in production)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.error('Portfolio Error:', e.error);
+    }
+    // In production, errors are silently handled to avoid exposing internals
 });
 
 // ===== ACCESSIBILITY IMPROVEMENTS =====
@@ -2842,3 +2514,70 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// ===== SKILL FLOATING ANIMATIONS =====
+function initSkillFloatingAnimations() {
+    // Check if user prefers reduced motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    
+    if (prefersReducedMotion) {
+        // Skip animation setup for users who prefer reduced motion
+        return;
+    }
+    
+    const skillBadges = document.querySelectorAll('.skill-badge');
+    
+    skillBadges.forEach((badge, index) => {
+        // Create unique animation delays and durations for each skill
+        const delay = (index * 0.3) % 2; // Stagger delays between 0-2 seconds
+        const duration = 5 + (index % 3) * 0.5; // Vary duration between 5-6.5 seconds
+        
+        // Apply custom animation properties
+        badge.style.animationDelay = `${delay}s`;
+        badge.style.animationDuration = `${duration}s`;
+    });
+}
+
+// ===== IMAGE ERROR HANDLING =====
+function initImageErrorHandling() {
+    // Handle all images
+    const images = document.querySelectorAll('img');
+    images.forEach(img => {
+        img.addEventListener('error', function() {
+            // Replace with a placeholder or hide the image
+            this.style.display = 'none';
+            // Optionally, you could set a placeholder image:
+            // this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect width="200" height="200" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EImage not found%3C/text%3E%3C/svg%3E';
+        });
+    });
+    
+    // Handle background images in elements with background-image style
+    const elementsWithBg = document.querySelectorAll('[style*="background-image"]');
+    elementsWithBg.forEach(el => {
+        const bgImage = el.style.backgroundImage;
+        if (bgImage && bgImage !== 'none') {
+            const urlMatch = bgImage.match(/url\(['"]?([^'"]+)['"]?\)/);
+            if (urlMatch) {
+                const imgUrl = urlMatch[1];
+                const testImg = new Image();
+                testImg.onerror = function() {
+                    // If image fails to load, add a fallback class
+                    el.classList.add('bg-image-error');
+                    el.style.backgroundImage = 'none';
+                    el.style.backgroundColor = '#f0f0f0';
+                    // Add a placeholder text if it's a project preview
+                    if (el.classList.contains('project-preview')) {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'project-placeholder-text';
+                        placeholder.textContent = 'Image not available';
+                        placeholder.style.cssText = 'display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 0.9rem;';
+                        if (!el.querySelector('.project-placeholder-text')) {
+                            el.appendChild(placeholder);
+                        }
+                    }
+                };
+                testImg.src = imgUrl;
+            }
+        }
+    });
+}

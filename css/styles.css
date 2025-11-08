@@ -175,6 +175,28 @@ nav {
     margin: 0 auto;
 }
 
+.logo-link {
+    display: inline-block;
+    transition: var(--transition);
+    text-decoration: none;
+    line-height: 0;
+}
+
+.logo-img {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
+    transition: var(--transition);
+    filter: drop-shadow(0 2px 8px rgba(167, 139, 250, 0.5)) brightness(1.1);
+    opacity: 0.95;
+}
+
+.logo-link:hover .logo-img {
+    transform: scale(1.05);
+    filter: drop-shadow(0 4px 12px rgba(167, 139, 250, 0.5));
+}
+
+/* Legacy logo text styles (keeping for compatibility) */
 .logo {
     font-family: var(--font-heading);
     font-size: 1.75rem;
@@ -239,6 +261,9 @@ nav {
     cursor: pointer;
     gap: 5px;
     padding: 0.5rem;
+    background: none;
+    border: none;
+    outline: none;
 }
 
 .mobile-menu-toggle span {
@@ -271,7 +296,7 @@ nav {
     text-align: left;
     position: relative;
     overflow: hidden;
-    padding: 2rem 0;
+    padding: 8rem 0 2rem 0;
     background: linear-gradient(135deg, #0F0B1E 0%, #1A1625 100%);
     width: 100%;
     max-width: 100%;
@@ -337,13 +362,13 @@ nav {
     flex-direction: column;
     align-items: flex-start;
     box-sizing: border-box;
-    gap: 3rem;
+    gap: 2rem;
 }
 
 .hero-main {
     display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: 5rem;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 4rem;
     width: 100%;
     align-items: center;
     position: relative;
@@ -352,7 +377,7 @@ nav {
 .hero-main::before {
     content: '';
     position: absolute;
-    left: calc(60% - 1px);
+    left: calc(56.5% - 1px);
     top: 10%;
     bottom: 10%;
     width: 2px;
@@ -371,7 +396,8 @@ nav {
 .hero-left {
     display: flex;
     flex-direction: column;
-    gap: 2.5rem;
+    gap: 2rem;
+    justify-content: center;
 }
 
 .hero-text {
@@ -382,8 +408,10 @@ nav {
 .hero-right {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
-    align-items: flex-end;
+    gap: 2.5rem;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
 }
 
 .hero-greeting {
@@ -400,7 +428,7 @@ nav {
 .hero-title {
     font-size: clamp(3.5rem, 8vw, 6rem);
     font-weight: 800;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
     background: linear-gradient(135deg, #F3F4F6 0%, #A78BFA 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -416,10 +444,10 @@ nav {
 }
 
 .hero-tagline {
-    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
     color: #E2E8F0;
     font-weight: 500;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
     opacity: 0;
     animation: fadeInUp 1s ease-out 0.7s forwards;
 }
@@ -446,8 +474,8 @@ nav {
 .hero-description {
     font-size: 1.125rem;
     color: #C7D2FE;
-    max-width: 600px;
-    margin: 0 0 2.5rem 0;
+    max-width: 580px;
+    margin: 0 0 2rem 0;
     line-height: 1.9;
     opacity: 0;
     animation: fadeInUp 1s ease-out 1.1s forwards;
@@ -470,9 +498,10 @@ nav {
 
 .hero-buttons {
     display: flex;
-    gap: 1.25rem;
+    gap: 1rem;
     justify-content: flex-start;
     flex-wrap: wrap;
+    margin-top: 0.5rem;
     opacity: 0;
     animation: fadeInUp 1s ease-out 1.3s forwards;
 }
@@ -496,13 +525,14 @@ nav {
     display: flex;
     flex-direction: column;
     gap: 0;
-    padding: 2.5rem;
+    padding: 2rem 2.5rem;
     background: linear-gradient(135deg, rgba(167, 139, 250, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%);
     border: 1px solid rgba(167, 139, 250, 0.15);
     border-radius: 1.5rem;
     backdrop-filter: blur(20px);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     min-width: 280px;
+    max-width: 320px;
     width: 100%;
     opacity: 0;
     animation: fadeInUp 1s ease-out 1.5s forwards;
@@ -590,8 +620,10 @@ nav {
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding-top: 1.5rem;
+    padding-top: 1.25rem;
     border-top: 1px solid rgba(167, 139, 250, 0.1);
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
     opacity: 0;
     animation: fadeInUp 1s ease-out 1.7s forwards;
 }
@@ -629,14 +661,15 @@ nav {
     gap: 0.5rem;
     font-size: 0.875rem;
     color: #94A3B8;
-    padding: 0.75rem 1.25rem;
+    padding: 0.5rem 1rem;
     background: rgba(167, 139, 250, 0.08);
-    border-radius: 2rem;
+    border-radius: 1.5rem;
     border: 1px solid rgba(167, 139, 250, 0.15);
     backdrop-filter: blur(10px);
     opacity: 0;
     animation: fadeInUp 1s ease-out 1.9s forwards;
     transition: all 0.3s ease;
+    margin-left: 0.5rem;
 }
 
 .hero-location:hover {
@@ -1065,6 +1098,8 @@ section {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     position: relative;
     overflow: hidden;
+    animation: floatSlide 6s ease-in-out infinite;
+    will-change: transform;
 }
 
 .skill-badge::before {
@@ -1082,12 +1117,6 @@ section {
     left: 100%;
 }
 
-.skill-badge:hover {
-    transform: translateY(-5px) scale(1.02);
-    border-color: #A78BFA;
-    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.3);
-    background: #252238;
-}
 
 .skill-icon-wrapper {
     display: flex;
@@ -1164,6 +1193,52 @@ section {
 
 .skill-badge:hover .skill-level-fill {
     box-shadow: 0 0 15px rgba(167, 139, 250, 0.7);
+}
+
+/* Floating slideshow animation for skills */
+@keyframes floatSlide {
+    0%, 100% {
+        transform: translateY(0px) translateX(0px) rotate(0deg);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    25% {
+        transform: translateY(-8px) translateX(3px) rotate(1deg);
+        box-shadow: 0 6px 16px rgba(167, 139, 250, 0.15);
+    }
+    50% {
+        transform: translateY(-12px) translateX(0px) rotate(0deg);
+        box-shadow: 0 8px 20px rgba(167, 139, 250, 0.2);
+    }
+    75% {
+        transform: translateY(-8px) translateX(-3px) rotate(-1deg);
+        box-shadow: 0 6px 16px rgba(167, 139, 250, 0.15);
+    }
+}
+
+/* Animation delays and durations are set dynamically via JavaScript */
+
+/* Enhanced floating on hover */
+.skill-badge:hover {
+    transform: translateY(-8px) scale(1.02) !important;
+    animation-play-state: paused;
+    border-color: #A78BFA;
+    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.3);
+    background: #252238;
+}
+
+/* Accessibility: Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .skill-badge {
+        animation: none;
+    }
+    
+    .skill-badge:hover {
+        transform: translateY(-5px) scale(1.02) !important;
+    }
+    
+    .skill-level-fill::after {
+        animation: none;
+    }
 }
 
 /* ===== PROJECTS SECTION ===== */
@@ -1348,21 +1423,35 @@ section {
 }
 
 .discover-ph-preview {
-    background-image: url('discover ph/bg.png');
+    background-image: url('../discover ph/bg.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
 }
 
 .adventura-preview {
-    background-image: url('Adventura/images/new bg.png');
+    background-image: url('../Adventura/images/new bg.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
 }
 
 .eidolon-preview {
-    background-image: url('Eidolon/images/bg.jpg');
+    background-image: url('../Eidolon/images/bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.weathercast-preview {
+    background-image: url('../weather cast pro/images/bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.porsche-preview {
+    background-image: url('../porsche/images/bg.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -2080,6 +2169,10 @@ footer p {
         padding: 1rem 1.5rem;
     }
     
+    .logo-img {
+        height: 40px;
+    }
+    
     .nav-links {
         position: fixed;
         top: 100%;
@@ -2130,20 +2223,24 @@ footer p {
     
     .hero-main {
         grid-template-columns: 1fr;
-        gap: 3rem;
+        gap: 2.5rem;
     }
     
     .hero-left {
-        gap: 2rem;
+        gap: 1.5rem;
+        text-align: center;
     }
     
     .hero-right {
-        align-items: stretch;
+        align-items: center;
+        gap: 2rem;
     }
     
     .hero-stats {
         width: 100%;
+        max-width: 100%;
         padding: 2rem;
+        margin: 0 auto;
     }
     
     .stat-item {
