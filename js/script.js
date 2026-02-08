@@ -463,8 +463,6 @@ function showAppPreview(appType) {
         showWeatherCastPreview();
     } else if (appType === 'discover-ph') {
         showDiscoverPHPreview();
-    } else if (appType === 'loloto') {
-        showLolotoPreview();
     } else if (appType === 'porsche-showcase') {
         showPorschePreview();
     }
@@ -1086,9 +1084,9 @@ function showAdventuraPreview() {
         .preview-modal-content { padding: 0; background: #1E1B2E; }
         .preview-header { position:relative; display:flex; justify-content:space-between; align-items:center; padding: 2rem 2rem 1rem 2rem; border-bottom:1px solid rgba(167, 139, 250, 0.2); background: linear-gradient(135deg, #1E1B2E 0%, #252238 100%); border-radius: 1rem 1rem 0 0; overflow:hidden; }
         .preview-header h2 { margin:0; color: #F3F4F6; font-size:1.5rem; font-weight:700; }
-        .preview-header-logo { position:absolute; right:1rem; top:50%; transform: translateY(-50%); opacity:0.1; pointer-events:none; }
+        .preview-header-logo { position:absolute; left:50%; top:50%; transform: translate(-50%, -50%); opacity:0.1; pointer-events:none; z-index:1; }
         .preview-header-logo img { height:80px; width:auto; display:block; filter: grayscale(100%); }
-        .preview-close { background:none; border:none; font-size:2rem; cursor:pointer; color: #94A3B8; padding:0.5rem; border-radius:0.5rem; transition:all 0.2s; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        .preview-close { background:none; border:none; font-size:2rem; cursor:pointer; color: #94A3B8; padding:0.5rem; border-radius:0.5rem; transition:all 0.2s; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; position:relative; z-index:2; }
         .preview-close:hover { background: rgba(167, 139, 250, 0.2); color: #A78BFA; }
         .preview-body { padding: 2rem; background: #1E1B2E; }
         .app-details { margin-bottom: 1.5rem; }
@@ -1455,9 +1453,9 @@ function showEidolonPreview() {
         .preview-modal-content { padding: 0; background: #1E1B2E; }
         .preview-header { position:relative; display:flex; justify-content:space-between; align-items:center; padding: 2rem 2rem 1rem 2rem; border-bottom:1px solid rgba(167, 139, 250, 0.2); background: linear-gradient(135deg, #1E1B2E 0%, #252238 100%); border-radius: 1rem 1rem 0 0; overflow:hidden; }
         .preview-header h2 { margin:0; color: #F3F4F6; font-size:1.5rem; font-weight:700; }
-        .preview-header-logo { position:absolute; right:1rem; top:50%; transform: translateY(-50%); opacity:0.1; pointer-events:none; }
+        .preview-header-logo { position:absolute; left:50%; top:50%; transform: translate(-50%, -50%); opacity:0.1; pointer-events:none; z-index:1; }
         .preview-header-logo img { height:80px; width:auto; display:block; filter: grayscale(100%); }
-        .preview-close { background:none; border:none; font-size:2rem; cursor:pointer; color: #94A3B8; padding:0.5rem; border-radius:0.5rem; transition:all 0.2s; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        .preview-close { background:none; border:none; font-size:2rem; cursor:pointer; color: #94A3B8; padding:0.5rem; border-radius:0.5rem; transition:all 0.2s; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; position:relative; z-index:2; }
         .preview-close:hover { background: rgba(167, 139, 250, 0.2); color: #A78BFA; }
         .preview-body { padding: 2rem; background: #1E1B2E; }
         .app-details { margin-bottom: 1.5rem; }
@@ -1771,150 +1769,6 @@ function showDiscoverPHPreview() {
                 <a href="https://dreidvd.github.io/Discover-PH/html/index.html" class="btn btn-primary" target="_blank">
                     <span class="download-icon">🌐</span> Visit Website
                 </a>
-            </div>
-        </div>
-    `;
-
-    const style = document.createElement('style');
-    style.textContent = `
-        .preview-modal-content { padding: 0; background: #1E1B2E; }
-        .preview-header { position:relative; display:flex; justify-content:space-between; align-items:center; padding: 2rem 2rem 1rem 2rem; border-bottom:1px solid rgba(167, 139, 250, 0.2); background: linear-gradient(135deg, #1E1B2E 0%, #252238 100%); border-radius: 1rem 1rem 0 0; overflow:hidden; }
-        .preview-header h2 { margin:0; color: #F3F4F6; font-size:1.5rem; font-weight:700; }
-        .preview-close { background:none; border:none; font-size:2rem; cursor:pointer; color: #94A3B8; padding:0.5rem; border-radius:0.5rem; transition:all 0.2s; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
-        .preview-close:hover { background: rgba(167, 139, 250, 0.2); color: #A78BFA; }
-        .preview-body { padding: 2rem; background: #1E1B2E; }
-        .app-details { margin-bottom: 3rem; }
-        .app-details h3 { color: #F3F4F6; font-size:1.25rem; font-weight:600; margin-bottom:1rem; text-align: center; }
-        .app-details p { color: #E2E8F0; line-height:1.8; }
-        .app-workflow { margin-bottom: 3rem; }
-        .app-workflow h3 { color: #F3F4F6; font-size:1.25rem; font-weight:600; margin-bottom:1.5rem; text-align:center; }
-        .workflow-steps { display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:1.5rem; margin-bottom:2rem; }
-        .workflow-step { display:flex; align-items:flex-start; gap:1rem; padding:1.5rem; background: #252238; border-radius:0.75rem; border-left:4px solid #A78BFA; transition: transform 0.3s ease; }
-        .workflow-step:hover { transform: translateX(5px); }
-        .step-number { background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%); color:white; width:2.5rem; height:2.5rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.125rem; flex-shrink:0; }
-        .step-content h4 { margin:0 0 0.5rem 0; color: #F3F4F6; font-size:1rem; font-weight:600; }
-        .step-content p { margin:0; color: #94A3B8; font-size:0.875rem; line-height:1.5; }
-        .preview-footer { padding: 2rem; border-top: 1px solid rgba(167, 139, 250, 0.2); display: flex; justify-content: center; background: #1E1B2E; border-radius: 0 0 1rem 1rem; }
-        .preview-footer .btn { text-decoration: none; }
-        @media (max-width: 768px) {
-            .workflow-steps { grid-template-columns: 1fr; }
-            .preview-header, .preview-body, .preview-footer { padding: 1rem; }
-        }
-    `;
-
-    modal.style.cssText = `
-        background: #1E1B2E;
-        border-radius: 1rem;
-        max-width: 1200px;
-        width: 100%;
-        max-height: 90vh;
-        overflow-y: auto;
-        transform: scale(0.8);
-        transition: transform 0.3s ease;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(167, 139, 250, 0.2);
-    `;
-
-    document.head.appendChild(style);
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-    
-    // Prevent body scroll when modal is open - use overflow hidden instead of fixed
-    // This preserves scroll position naturally
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-
-    setTimeout(() => {
-        overlay.style.opacity = '1';
-        modal.style.transform = 'scale(1)';
-    }, 10);
-
-    function closeModal() {
-        overlay.style.opacity = '0';
-        modal.style.transform = 'scale(0.8)';
-        setTimeout(() => {
-            if (document.body.contains(overlay)) {
-                document.body.removeChild(overlay);
-            }
-            if (document.head.contains(style)) {
-                document.head.removeChild(style);
-            }
-            // Restore body scroll - simply restore overflow
-            document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
-        }, 300);
-    }
-
-    modal.querySelector('.preview-close').addEventListener('click', closeModal);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
-}
-
-function showLolotoPreview() {
-    const overlay = document.createElement('div');
-    overlay.className = 'preview-modal-overlay';
-    overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.9);
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        overflow-y: auto;
-        padding: 2rem;
-    `;
-
-    const modal = document.createElement('div');
-    modal.className = 'app-preview-modal';
-    modal.innerHTML = `
-        <div class="preview-modal-content">
-            <div class="preview-header">
-                <h2>Loloto Management Preview</h2>
-                <button class="preview-close">&times;</button>
-            </div>
-            <div class="preview-body">
-                <div class="app-details">
-                    <h3>App Details</h3>
-                    <p>Loloto Management is a comprehensive business management application designed for junkshops. It provides inventory tracking, financial analytics, receipt management, and business insights to help junkshop owners manage their operations efficiently.</p>
-                </div>
-                <div class="app-workflow">
-                    <h3>Features & Functionality</h3>
-                    <div class="workflow-steps">
-                        <div class="workflow-step">
-                            <div class="step-number">1</div>
-                            <div class="step-content">
-                                <h4>Inventory Management</h4>
-                                <p>Track items, materials, and stock levels with real-time updates and categorization.</p>
-                            </div>
-                        </div>
-                        <div class="workflow-step">
-                            <div class="step-number">2</div>
-                            <div class="step-content">
-                                <h4>Financial Analytics</h4>
-                                <p>Monitor income, expenses, profits, and financial trends with detailed reports and charts.</p>
-                            </div>
-                        </div>
-                        <div class="workflow-step">
-                            <div class="step-number">3</div>
-                            <div class="step-content">
-                                <h4>Receipt Management</h4>
-                                <p>Generate, store, and manage digital receipts for all transactions and purchases.</p>
-                            </div>
-                        </div>
-                        <div class="workflow-step">
-                            <div class="step-number">4</div>
-                            <div class="step-content">
-                                <h4>Business Insights</h4>
-                                <p>Get actionable insights and analytics to make informed business decisions.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     `;
