@@ -1033,6 +1033,98 @@ section {
     margin-bottom: 1.25rem;
 }
 
+/* ===== EXPERIENCE SECTION ===== */
+.experience-section {
+    background: linear-gradient(180deg, #0F0B1E 0%, #1A1625 100%);
+    padding: var(--section-padding);
+    position: relative;
+    z-index: 1;
+}
+
+.experience-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.experience-card {
+    padding: 2rem 2.5rem;
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%);
+    border: 1px solid rgba(167, 139, 250, 0.15);
+    border-radius: 1.25rem;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    opacity: 0;
+    animation: fadeInUp 0.8s ease-out forwards;
+    transition: all 0.3s ease;
+}
+
+.experience-card:nth-child(1) { animation-delay: 0.1s; }
+.experience-card:nth-child(2) { animation-delay: 0.25s; }
+
+.experience-card:hover {
+    border-color: rgba(167, 139, 250, 0.3);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(167, 139, 250, 0.1);
+}
+
+.experience-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(167, 139, 250, 0.15);
+}
+
+.experience-role {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: #F3F4F6;
+    margin: 0;
+    width: 100%;
+}
+
+.experience-company {
+    font-size: 1rem;
+    color: #A78BFA;
+    font-weight: 600;
+}
+
+.experience-date {
+    font-size: 0.9375rem;
+    color: #94A3B8;
+    margin-left: auto;
+}
+
+.experience-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.experience-list li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #E2E8F0;
+}
+
+.experience-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    width: 6px;
+    height: 6px;
+    background: #A78BFA;
+    border-radius: 50%;
+}
+
 /* ===== SKILLS SECTION ===== */
 .skills-section {
     background: linear-gradient(180deg, #0F0B1E 0%, #1A1625 100%);
